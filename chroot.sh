@@ -21,6 +21,12 @@ echo "LANG=en_US.UTF-8" > /etc/locale.conf
 echo "KEYMAP=${KEYMAP}" > /etc/vconsole.conf
 echo "${HOSTNAME}" > /etc/hostname
 
+cat > /etc/hosts << HOSTS
+127.0.0.1 localhost.localdomain localhost
+::1 localhost.localdomain localhost
+127.0.1.1 ${HOSTNAME}.localdomain ${HOSTNAME}
+HOSTS
+
 # Enable multilib packages in pacman.
 sed -i '/^#\[multilib\]/{s/^#//;n;s/^#//}' /etc/pacman.conf
 
@@ -29,7 +35,7 @@ pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
     base base-devel btop \
     dhcpcd discord docker docker-compose dosfstools dunst \
     efibootmgr \
-    fd feh ffmpeg fzf \
+    fd feh ffmpeg firefox fzf \
     gcc git \
     i3-wm i3lock i3status imagemagick \
     jq \
