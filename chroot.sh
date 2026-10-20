@@ -40,7 +40,7 @@ pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
     i3-wm i3lock i3status imagemagick \
     jq \
     keepassxc kitty \
-    lib32-mesa lib32-vulkan-radeon libva-utils limine linux linux-firmware \
+    lib32-mesa lib32-vulkan-radeon libva-utils limine linux linux-firmware ly \
     man-db man-pages mesa mpv \
     neovim noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra \
     openssh \
@@ -51,7 +51,7 @@ pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
     unp unrar unzip \
     vulkan-radeon \
     wget wireplumber \
-    xclip xdg-user-dirs xdg-utils xorg-server xorg-xinit xorg-xrandr xorg-xset xsel \
+    xclip xdg-user-dirs xdg-utils xorg-xauth xorg-server xorg-xinit xorg-xrandr xorg-xset xsel \
     yazi yt-dlp \
     zoxide
 
@@ -102,4 +102,7 @@ useradd --create-home --groups wheel "$USERNAME"
 echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel
 chmod 0440 /etc/sudoers.d/10-wheel
 
-systemctl enable dhcpcd systemd-timesyncd docker
+systemctl enable dhcpcd systemd-timesyncd docker ly@tty2.service
+
+# The TTY service that Ly will run on must be disabled.
+systemctl disable getty@tty2.service
