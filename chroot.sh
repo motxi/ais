@@ -47,7 +47,7 @@ pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
     pacman-contrib picom pipewire pipewire-pulse polkit python \
     reflector ripgrep rofi rustup \
     sshfs \
-    ttf-dejavu ttf-liberation \
+    ttf-dejavu ttf-liberation ttf-mononoki-nerd \
     unp unrar unzip \
     vulkan-radeon \
     wget wireplumber \
