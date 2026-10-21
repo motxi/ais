@@ -155,6 +155,10 @@ timeout: 5
     cmdline: root=PARTUUID=${ROOT_PARTUUID} rw
     module_path: boot():/amd-ucode.img
     module_path: boot():/initramfs-linux.img
+
+/Memtest86+
+    protocol: efi
+    path: boot():/memtest86+/memtest86x64.efi
 LIMINE
 
 # Copy the chroot script into the new system and run it there. The values it

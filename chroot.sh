@@ -41,7 +41,7 @@ pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
     jq \
     keepassxc kitty \
     lib32-mesa lib32-vulkan-radeon libva-utils limine linux linux-firmware ly \
-    man-db man-pages mesa mpv \
+    man-db man-pages mesa memtest86+-efi mpv \
     neovim noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra \
     openssh \
     pacman-contrib picom pipewire pipewire-pulse polkit python \
