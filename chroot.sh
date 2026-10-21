@@ -31,9 +31,9 @@ HOSTS
 sed -i '/^#\[multilib\]/{s/^#//;n;s/^#//}' /etc/pacman.conf
 
 pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
-    amd-ucode \
+    amd-ucode arandr \
     base base-devel btop \
-    dhcpcd discord docker docker-compose dosfstools dunst \
+    dex dhcpcd discord docker docker-compose dosfstools dunst \
     efibootmgr \
     fd feh ffmpeg firefox fzf \
     gcc git \
@@ -47,11 +47,11 @@ pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
     pacman-contrib picom pipewire pipewire-pulse polkit python \
     reflector ripgrep rofi rustup \
     sshfs \
-    ttf-dejavu ttf-liberation ttf-mononoki-nerd \
+    tree ttf-dejavu ttf-liberation ttf-mononoki-nerd \
     unp unrar unzip \
     vulkan-radeon \
     wget wireplumber \
-    xclip xdg-user-dirs xdg-utils xorg-xauth xorg-server xorg-xinit xorg-xrandr xorg-xset xsel \
+    xclip xdg-user-dirs xdg-utils xorg-xauth xorg-server xorg-xinit xorg-xrandr xorg-xset xsel xss-lock \
     yazi yt-dlp \
     zoxide
 
