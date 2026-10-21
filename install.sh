@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-exec > >(tee arch_install.log) 2>&1
+exec > >(tee install.log) 2>&1
 
 # Must be a valid block device without the partition number.
 # Run `fdisk -l` for possible values.

@@ -1,16 +1,16 @@
 #! /usr/bin/env bash
 
 # This script is not meant to be run directly. It is copied into the new system
-# and executed inside the chroot by arch_install.sh, which passes the values
-# below through the environment.
+# and executed inside the chroot by "install.sh", which passes the values below
+# through the environment.
 
 set -euo pipefail
 
-: "${TIMEZONE:?Must be set by arch_install.sh}"
-: "${KEYMAP:?Must be set by arch_install.sh}"
-: "${HOSTNAME:?Must be set by arch_install.sh}"
-: "${USERNAME:?Must be set by arch_install.sh}"
-: "${DRIVE:?Must be set by arch_install.sh}"
+: "${TIMEZONE:?Must be set by install.sh}"
+: "${KEYMAP:?Must be set by install.sh}"
+: "${HOSTNAME:?Must be set by install.sh}"
+: "${USERNAME:?Must be set by install.sh}"
+: "${DRIVE:?Must be set by install.sh}"
 
 ln --symbolic --force "/usr/share/zoneinfo/${TIMEZONE}" /etc/localtime
 hwclock --systohc
