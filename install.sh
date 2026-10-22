@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-exec > >(tee install.log) 2>&1
+exec > >(tee install.log) 2>&1 || true
 
 # Must be a valid block device without the partition number.
 # Run `fdisk -l` for possible values.
@@ -53,7 +53,7 @@ cleanup() {
         umount --recursive /mnt || die "Failed to unmount /mnt."
     fi
 
-    exit "$status"
+    exit "${status}"
 }
 
 trap cleanup EXIT
@@ -69,12 +69,12 @@ curl --fail --silent --head --max-time 5 https://archlinux.org > /dev/null \
 
 platform_size=$(cat /sys/firmware/efi/fw_platform_size 2> /dev/null || true)
 
-[[ "$platform_size" == @(32|64) ]] || die "This script only works in UEFI mode."
+[[ "${platform_size}" == @(32|64) ]] || die "This script only works in UEFI mode."
 [[ -f /usr/bin/pacstrap ]] || die "This script must be run from a valid installation environment."
-[[ -b "$DRIVE" ]] || die "The selected drive is not a valid block device."
-[[ -f "$CHROOT_SCRIPT" ]] || die "Missing chroot script: ${CHROOT_SCRIPT}."
+[[ -b "${DRIVE}" ]] || die "The selected drive is not a valid block device."
+[[ -f "${CHROOT_SCRIPT}" ]] || die "Missing chroot script: ${CHROOT_SCRIPT}."
 
-loadkeys "$KEYMAP" || die "Failed to load keymap ${KEYMAP}."
+loadkeys "${KEYMAP}" || die "Failed to load keymap ${KEYMAP}."
 timedatectl set-ntp true
 
 echo -e "Arch Linux will be installed in ${B}${DRIVE}${S}."
@@ -86,10 +86,10 @@ echo
 echo -en "Type ${B}${DRIVE}${S} to confirm: "
 read -r decision
 
-[[ "$decision" == "$DRIVE" ]] || die "Installation aborted by the user."
+[[ "${decision}" == "${DRIVE}" ]] || die "Installation aborted by the user."
 
-wipefs --all "$DRIVE" || die "Failed to wipe filesystem signatures."
-sgdisk --zap-all "$DRIVE" || die "Failed to wipe the drive data structures."
+wipefs --all "${DRIVE}" || die "Failed to wipe filesystem signatures."
+sgdisk --zap-all "${DRIVE}" || die "Failed to wipe the drive data structures."
 
 echo -e "The drive ${B}${DRIVE}${S} has been ${G}successfully${S} wiped."
 echo "Now the drive will be partitioned."
@@ -106,7 +106,7 @@ echo "Now the drive will be partitioned."
 #
 # Make sure to also modify the partition formatting/mounting structure below if
 # you change anything here.
-parted "$DRIVE" --script --align optimal \
+parted "${DRIVE}" --script --align optimal \
     mklabel gpt \
     mkpart EFI fat32 0% 512MiB \
     mkpart ROOT ext4 1048576s 100% \
@@ -120,9 +120,9 @@ udevadm settle
 
 # NVMe and MMC devices name their partitions using the "<drive>p<N>" format
 # instead of "<drive><N>".
-PART_PREFIX="$DRIVE"
+PART_PREFIX="${DRIVE}"
 
-if [[ "$DRIVE" == *[0-9] ]]; then
+if [[ "${DRIVE}" == *[0-9] ]]; then
     PART_PREFIX+="p"
 fi
 
@@ -164,15 +164,15 @@ LIMINE
 # Copy the chroot script into the new system and run it there. The values it
 # needs are passed explicitly through the environment and the copy is removed
 # afterwards (or by the cleanup trap if anything fails).
-install --mode 0700 "$CHROOT_SCRIPT" "/mnt${CHROOT_SCRIPT_DEST}"
+install --mode 0700 "${CHROOT_SCRIPT}" "/mnt${CHROOT_SCRIPT_DEST}"
 
 arch-chroot /mnt /usr/bin/env \
-    TIMEZONE="$TIMEZONE" \
-    KEYMAP="$KEYMAP" \
-    HOSTNAME="$HOSTNAME" \
-    USERNAME="$USERNAME" \
-    DRIVE="$DRIVE" \
-    bash "$CHROOT_SCRIPT_DEST" \
+    TIMEZONE="${TIMEZONE}" \
+    KEYMAP="${KEYMAP}" \
+    HOSTNAME="${HOSTNAME}" \
+    USERNAME="${USERNAME}" \
+    DRIVE="${DRIVE}" \
+    bash "${CHROOT_SCRIPT_DEST}" \
     || die "The chroot script failed."
 
 rm --force "/mnt${CHROOT_SCRIPT_DEST}"
@@ -183,7 +183,7 @@ echo "Set the root password:"
 arch-chroot /mnt passwd root
 
 echo "Set the password for ${USERNAME}:"
-arch-chroot /mnt passwd "$USERNAME"
+arch-chroot /mnt passwd "${USERNAME}"
 
 echo -e "Installation ${G}successfully${S} finished!"
 echo "You may reboot now"

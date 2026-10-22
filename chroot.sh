@@ -64,7 +64,7 @@ cp /usr/share/limine/BOOTX64.EFI /boot/EFI/BOOT/
 
 efibootmgr \
     --create \
-    --disk "$DRIVE" \
+    --disk "${DRIVE}" \
     --part 1 \
     --label 'Limine' \
     --loader '\EFI\limine\BOOTX64.EFI' \
@@ -98,7 +98,7 @@ When = PostTransaction
 Exec = /usr/local/bin/limine-deploy
 LIMINE_HOOK
 
-useradd --create-home --groups wheel "$USERNAME"
+useradd --create-home --groups wheel "${USERNAME}"
 echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel
 chmod 0440 /etc/sudoers.d/10-wheel
 
