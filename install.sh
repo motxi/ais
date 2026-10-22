@@ -99,21 +99,19 @@ echo "Now the drive will be partitioned."
 # The current setup creates a 512 MiB FAT32 EFI partition (1) and the rest is
 # used for the ext4 ROOT partition (2).
 #
-# Partition 2 starts at partition 1 end sector + 1.
-#
 # For more information about partition type GUIDs refer to:
 # https://en.wikipedia.org/wiki/GUID_Partition_Table#Partition_type_GUIDs
 #
 # Make sure to also modify the partition formatting/mounting structure below if
 # you change anything here.
-parted "${DRIVE}" --script --align optimal \
+parted "${DRIVE}" --script --align minimal \
     mklabel gpt \
-    mkpart EFI fat32 0% 512MiB \
-    mkpart ROOT ext4 1048576s 100% \
+    mkpart EFI fat32 1MiB 513MiB \
+    mkpart ROOT ext4 513MiB 100% \
     type 1 C12A7328-F81F-11D2-BA4B-00A0C93EC93B \
     type 2 4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709 \
-    align-check optimal 1 \
-    align-check optimal 2 \
+    align-check minimal 1 \
+    align-check minimal 2 \
     || die "Disk partitioning failed."
 
 udevadm settle
