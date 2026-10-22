@@ -32,8 +32,8 @@ sed -i '/^#\[multilib\]/{s/^#//;n;s/^#//}' /etc/pacman.conf
 
 pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
     amd-ucode arandr \
-    base base-devel btop \
-    dex dhcpcd discord docker docker-compose dosfstools dunst \
+    bash-completion base base-devel btop \
+    dex dhcpcd docker docker-compose dosfstools dunst \
     efibootmgr \
     fd feh ffmpeg firefox fzf \
     gcc git \
@@ -46,7 +46,7 @@ pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
     openssh \
     pacman-contrib picom pipewire pipewire-pulse polkit python \
     reflector ripgrep rofi rustup \
-    sshfs \
+    shellcheck sshfs \
     tree ttf-dejavu ttf-liberation ttf-mononoki-nerd \
     unp unrar unzip \
     vulkan-radeon \
