@@ -40,7 +40,7 @@ pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
     i3-wm i3lock i3status imagemagick \
     jq \
     keepassxc kitty \
-    lib32-mesa lib32-vulkan-radeon libva-utils limine linux linux-firmware ly \
+    lib32-mesa lib32-vulkan-radeon libnotify libva-utils limine linux linux-firmware ly \
     man-db man-pages mesa memtest86+-efi mpv \
     neovim noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra \
     openssh \
