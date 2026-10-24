@@ -32,9 +32,9 @@ sed -i '/^#\[multilib\]/{s/^#//;n;s/^#//}' /etc/pacman.conf
 
 pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
     amd-ucode arandr \
-    bash-completion base base-devel btop \
+    base base-devel bat btop \
     dex dhcpcd docker docker-compose dosfstools dunst \
-    efibootmgr \
+    efibootmgr eza \
     fd feh ffmpeg firefox fzf \
     git \
     i3-wm i3lock i3status imagemagick \
@@ -53,7 +53,7 @@ pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
     wget wireplumber \
     xclip xdg-user-dirs xdg-utils xorg-server xorg-xinit xorg-xrandr xorg-xset xsel xss-lock \
     yazi yt-dlp \
-    zoxide
+    zoxide zsh zsh-autosuggestions zsh-syntax-highlighting
 
 # Install Limine in the dedicated directory and in the UEFI fallback path, which
 # firmware uses when it drops the efibootmgr entry.
