@@ -131,7 +131,7 @@ mount "${PART_PREFIX}2" /mnt
 mount --mkdir --options umask=0077 "${PART_PREFIX}1" /mnt/boot
 MOUNTED=1
 
-pacstrap -K /mnt
+pacstrap -K /mnt base
 genfstab -t PARTUUID /mnt | tr -s '[:blank:]' ' ' > /mnt/etc/fstab
 
 # Arrays can't be passed through the environment, so the locales are written
