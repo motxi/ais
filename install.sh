@@ -86,6 +86,11 @@ setfont ter-120b || true
 
 (( EUID == 0 )) || die 'This script must be run as root.'
 
+if mountpoint --quiet /mnt; then
+    say blue 'Unmounting previous /mnt...'
+    umount --recursive /mnt || die 'Failed to unmount /mnt.'
+fi
+
 curl --fail --silent --head --max-time 5 https://archlinux.org > /dev/null \
     || die 'No internet connection. Connect to the network and try again.'
 
