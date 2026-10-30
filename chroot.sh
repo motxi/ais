@@ -114,7 +114,9 @@ systemctl enable \
     dhcpcd.service docker.service systemd-timesyncd.service \
     paccache.timer reflector.timer
 
-systemctl enable --user --now pipewire.service pipewire-pulse.service wireplumber.service
+# Trying to use "--user" here fails in chroot because there is no running user
+# manager or D-Bus session to talk to.
+systemctl enable --global pipewire.service pipewire-pulse.service wireplumber.service
 
 # The TTY service that Ly will run on must be disabled.
 systemctl enable ly@tty2.service
