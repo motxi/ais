@@ -37,6 +37,7 @@ pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
     efibootmgr eza \
     fd feh ffmpeg firefox fzf \
     git \
+    headsetcontrol \
     i3-wm i3lock i3status imagemagick \
     jq \
     keepassxc kitty \
@@ -44,16 +45,22 @@ pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
     man-db man-pages mesa memtest86+-efi mpv \
     neovim noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra \
     openssh \
-    pacman-contrib picom pipewire pipewire-alsa pipewire-jack pipewire-pulse polkit python \
+    pacman-contrib picom pipewire pipewire-alsa pipewire-jack pipewire-pulse playerctl polkit python \
     reflector ripgrep rofi rustup \
-    shellcheck sshfs \
+    scrot shellcheck sshfs \
     tree ttf-dejavu ttf-liberation ttf-mononoki-nerd \
     unp unrar unzip uv \
     vulkan-radeon \
     wget wireplumber \
-    xclip xdg-user-dirs xdg-utils xorg-server xorg-xinit xorg-xrandr xorg-xset xsel xss-lock \
+    xclip xdg-user-dirs xdg-utils xorg-server xorg-xinit xorg-xinput xorg-xset xsel xss-lock \
     yazi yt-dlp \
     zoxide zsh zsh-autosuggestions zsh-syntax-highlighting
+
+# The "autodetect" hook shrinks the initramfs to only the modules needed by the
+# hardware it is built on, which can leave out the USB/storage drivers other
+# machines need to find the root partition.
+sed -i '/^HOOKS=/s/ autodetect//' /etc/mkinitcpio.conf
+mkinitcpio --allpresets
 
 # Install Limine in the dedicated directory and in the UEFI fallback path, which
 # firmware uses when it drops the efibootmgr entry.
@@ -69,6 +76,7 @@ efibootmgr \
     --label 'Limine' \
     --loader '\EFI\limine\BOOTX64.EFI' \
     --unicode
+    || echo "Could not create the UEFI entry for Limine."
 
 # Keep the copies of the Limine binary up to date when the package is upgraded.
 mkdir --parents /etc/pacman.d/hooks
