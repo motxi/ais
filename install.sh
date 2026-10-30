@@ -6,37 +6,49 @@ exec > >(tee install.log) 2>&1 || true
 
 # Must be a valid block device without the partition number.
 # Run `fdisk -l` for possible values.
-DRIVE="/dev/sda"
+readonly DRIVE='/dev/sda'
 
 # Run `localectl list-keymaps` for possible values.
-KEYMAP="us"
+readonly KEYMAP='us'
 
 # Run `cat /etc/locale.gen` for possible values.
-LOCALES=("en_US.UTF-8 UTF-8" "es_ES.UTF-8 UTF-8" "ja_JP.UTF-8 UTF-8")
+readonly LOCALES=('en_US.UTF-8 UTF-8' 'es_ES.UTF-8 UTF-8' 'ja_JP.UTF-8 UTF-8')
 
 # Must follow the format "Zone/Location".
-TIMEZONE="Europe/Madrid"
+readonly TIMEZONE='Europe/Madrid'
 
-USERNAME="motxi"
-HOSTNAME="arch"
+readonly USERNAME='motxi'
+readonly HOSTNAME='arch'
 
-R='\033[0;31m' # Red
-G='\033[0;32m' # Green
-B='\033[0;34m' # Blue
-S='\033[0m' # Reset
+readonly R='\033[1;31m' # Red
+readonly G='\033[1;32m' # Green
+readonly B='\033[1;34m' # Blue
+readonly S='\033[0m' # Reset
 
 # The chroot script must live next to this one.
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-CHROOT_SCRIPT="${SCRIPT_DIR}/chroot.sh"
-CHROOT_SCRIPT_DEST="/root/chroot.sh"
+readonly SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+readonly CHROOT_SCRIPT="${SCRIPT_DIR}/chroot.sh"
+readonly CHROOT_SCRIPT_DEST='/root/chroot.sh'
 
 MOUNTED=0
 
-die() {
-    local message=$1
+say() {
+    local color=$1
+    local message=${2:-}
 
+    case "${color}" in
+        'red') color="${R}" ;;
+        'green') color="${G}" ;;
+        'blue') color="${B}" ;;
+        *) color="${S}" ;;
+    esac
+
+    echo -e "${color}${message}${S}" >&2
+}
+
+die() {
     echo
-    echo -e "${R}${message}${S}" >&2
+    say red "$1"
 
     exit 1
 }
@@ -49,8 +61,8 @@ cleanup() {
     if (( MOUNTED )); then
         rm --force "/mnt${CHROOT_SCRIPT_DEST}"
 
-        echo "Unmounting /mnt..."
-        umount --recursive /mnt || die "Failed to unmount /mnt."
+        say green 'Unmounting /mnt...'
+        umount --recursive /mnt || die 'Failed to unmount /mnt.'
     fi
 
     exit "${status}"
@@ -60,39 +72,40 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-setfont ter-120b
+setfont ter-120b || true
 
-(( EUID == 0 )) || die "This script must be run as root."
+(( EUID == 0 )) || die 'This script must be run as root.'
 
 curl --fail --silent --head --max-time 5 https://archlinux.org > /dev/null \
-    || die "No internet connection. Connect to the network and try again."
+    || die 'No internet connection. Connect to the network and try again.'
 
 platform_size=$(cat /sys/firmware/efi/fw_platform_size 2> /dev/null || true)
 
-[[ "${platform_size}" == @(32|64) ]] || die "This script only works in UEFI mode."
-[[ -f /usr/bin/pacstrap ]] || die "This script must be run from a valid installation environment."
-[[ -b "${DRIVE}" ]] || die "The selected drive is not a valid block device."
+[[ "${platform_size}" == @(32|64) ]] || die 'This script only works in UEFI mode.'
+[[ -f /usr/bin/pacstrap ]] || die 'This script must be run from a valid installation environment.'
+[[ -b "${DRIVE}" ]] || die 'The selected drive is not a valid block device.'
 [[ -f "${CHROOT_SCRIPT}" ]] || die "Missing chroot script: ${CHROOT_SCRIPT}."
 
 loadkeys "${KEYMAP}" || die "Failed to load keymap ${KEYMAP}."
 timedatectl set-ntp true
 
-echo -e "Arch Linux will be installed in ${B}${DRIVE}${S}."
-echo
-echo -e "The drive will be ${R}completely${S} wiped."
-echo -e "This ${R}CAN NOT${S} be undone."
-echo
+say blue "Arch Linux will be installed in ${DRIVE}."
+say red 'The drive will be completely wiped.'
+say red 'This CAN NOT be undone.'
+say ''
 
-echo -en "Type ${B}${DRIVE}${S} to confirm: "
+say blue "Type '${DRIVE}' to confirm:"
+say ''
+
 read -r decision
 
-[[ "${decision}" == "${DRIVE}" ]] || die "Installation aborted by the user."
+[[ "${decision}" == "${DRIVE}" ]] || die 'Installation aborted by the user.'
 
-wipefs --all "${DRIVE}" || die "Failed to wipe filesystem signatures."
-sgdisk --zap-all "${DRIVE}" || die "Failed to wipe the drive data structures."
+wipefs --all "${DRIVE}" || die 'Failed to wipe filesystem signatures.'
+sgdisk --zap-all "${DRIVE}" || die 'Failed to wipe the drive data structures.'
 
-echo -e "The drive ${B}${DRIVE}${S} has been ${G}successfully${S} wiped."
-echo "Now the drive will be partitioned."
+say green "The drive ${DRIVE} has been successfully wiped."
+say green 'Now the drive will be partitioned.'
 
 # Feel free to modify the partitioning structure as you like.
 #
@@ -112,7 +125,7 @@ parted "${DRIVE}" --script --align minimal \
     type 2 4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709 \
     align-check minimal 1 \
     align-check minimal 2 \
-    || die "Disk partitioning failed."
+    || die 'Disk partitioning failed.'
 
 udevadm settle
 
@@ -121,17 +134,19 @@ udevadm settle
 PART_PREFIX="${DRIVE}"
 
 if [[ "${DRIVE}" == *[0-9] ]]; then
-    PART_PREFIX+="p"
+    PART_PREFIX+='p'
 fi
 
 mkfs.fat -F 32 -n EFI "${PART_PREFIX}1"
 mkfs.ext4 -L ROOT "${PART_PREFIX}2"
 
 mount "${PART_PREFIX}2" /mnt
-mount --mkdir --options umask=0077 "${PART_PREFIX}1" /mnt/boot
 MOUNTED=1
+mount --mkdir --options umask=0077 "${PART_PREFIX}1" /mnt/boot
 
 pacstrap -K /mnt base
+
+# Generate and cleanup the fstab file (personal preference).
 genfstab -t PARTUUID /mnt | tr -s '[:blank:]' ' ' > /mnt/etc/fstab
 
 # Arrays can't be passed through the environment, so the locales are written
@@ -141,7 +156,7 @@ printf '%s\n' "${LOCALES[@]}" > /mnt/etc/locale.gen
 ROOT_PARTUUID=$(blkid --match-tag PARTUUID --output value "${PART_PREFIX}2")
 
 # Limine looks for its config in the root of the partition it was loaded from,
-# which is the ESP (mounted at "/boot").
+# which is the ESP (mounted at /boot).
 #
 # This heredoc is intentionally unquoted so ${ROOT_PARTUUID} gets expanded.
 cat > /mnt/boot/limine.conf << LIMINE
@@ -171,17 +186,17 @@ arch-chroot /mnt /usr/bin/env \
     USERNAME="${USERNAME}" \
     DRIVE="${DRIVE}" \
     bash "${CHROOT_SCRIPT_DEST}" \
-    || die "The chroot script failed."
+    || die 'The chroot script failed.'
 
 rm --force "/mnt${CHROOT_SCRIPT_DEST}"
 
 # The following commands are ran outside the chroot script because passwd needs
 # the terminal on stdin to work properly.
-echo "Set the root password:"
+say blue 'Set the root password:'
 arch-chroot /mnt passwd root
 
-echo "Set the password for ${USERNAME}:"
+say blue "Set the password for ${USERNAME}:"
 arch-chroot /mnt passwd "${USERNAME}"
 
-echo -e "Installation ${G}successfully${S} finished!"
-echo "You may reboot now"
+say green 'Installation successfully finished!'
+say green 'You may reboot now'
