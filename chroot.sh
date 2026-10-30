@@ -75,7 +75,7 @@ efibootmgr \
     --part 1 \
     --label 'Limine' \
     --loader '\EFI\limine\BOOTX64.EFI' \
-    --unicode
+    --unicode \
     || echo "Could not create the UEFI entry for Limine."
 
 # Keep the copies of the Limine binary up to date when the package is upgraded.
