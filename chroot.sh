@@ -17,7 +17,7 @@ hwclock --systohc
 
 locale-gen
 
-echo "LANG=en_US.UTF-8" > /etc/locale.conf
+echo 'LANG=en_US.UTF-8' > /etc/locale.conf
 echo "KEYMAP=${KEYMAP}" > /etc/vconsole.conf
 echo "${HOSTNAME}" > /etc/hostname
 
@@ -76,7 +76,7 @@ efibootmgr \
     --label 'Limine' \
     --loader '\EFI\limine\BOOTX64.EFI' \
     --unicode \
-    || echo "Could not create the UEFI entry for Limine."
+    || echo 'Could not create the UEFI entry for Limine.'
 
 # Keep the copies of the Limine binary up to date when the package is upgraded.
 mkdir --parents /etc/pacman.d/hooks
