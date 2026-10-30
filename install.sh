@@ -53,6 +53,16 @@ die() {
     exit 1
 }
 
+password() {
+    local user=$1
+
+    say blue "Set the password for ${user}:"
+
+    until arch-chroot /mnt passwd "${user}"; do
+        say red 'Password not set. Try again.'
+    done
+}
+
 cleanup() {
     local status=$?
 
@@ -190,13 +200,8 @@ arch-chroot /mnt /usr/bin/env \
 
 rm --force "/mnt${CHROOT_SCRIPT_DEST}"
 
-# The following commands are ran outside the chroot script because passwd needs
-# the terminal on stdin to work properly.
-say blue 'Set the root password:'
-arch-chroot /mnt passwd root
-
-say blue "Set the password for ${USERNAME}:"
-arch-chroot /mnt passwd "${USERNAME}"
+set_password root
+set_password "${USERNAME}"
 
 say green 'Installation successfully finished!'
 say green 'You may reboot now'
