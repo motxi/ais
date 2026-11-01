@@ -35,17 +35,17 @@ pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
     base base-devel bat btop \
     dex dhcpcd docker docker-compose dosfstools dunst \
     efibootmgr eza \
-    fd feh ffmpeg firefox fzf \
+    fd feh ffmpeg firefox fwupd fzf \
     git \
     headsetcontrol \
     i3-wm i3lock i3status imagemagick \
     jq \
     keepassxc kitty \
-    lib32-mesa lib32-vulkan-radeon libnotify libva-utils limine linux linux-firmware ly \
+    lact lib32-mesa lib32-vulkan-radeon libnotify libva-utils limine linux linux-firmware ly \
     man-db man-pages mesa memtest86+-efi mpv \
-    neovim noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra \
+    neovim noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra nvtop \
     openssh \
-    pacman-contrib picom pipewire pipewire-alsa pipewire-jack pipewire-pulse playerctl polkit python \
+    pacman-contrib picom pipewire pipewire-alsa pipewire-jack pipewire-pulse playerctl polkit power-profiles-daemon python \
     reflector ripgrep rofi rustup \
     scrot shellcheck sshfs \
     tree ttf-dejavu ttf-liberation ttf-mononoki-nerd \
@@ -56,10 +56,11 @@ pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
     yazi yt-dlp \
     zoxide zsh zsh-autosuggestions zsh-syntax-highlighting
 
-# The "autodetect" hook shrinks the initramfs to only the modules needed by the
-# hardware it is built on, which can leave out the USB/storage drivers other
-# machines need to find the root partition.
-sed -i '/^HOOKS=/s/ autodetect//' /etc/mkinitcpio.conf
+# Load amdgpu in the initramfs (early KMS).
+mkdir --parents /etc/mkinitcpio.conf.d
+echo 'MODULES+=(amdgpu)' > /etc/mkinitcpio.conf.d/amdgpu.conf
+
+# Rebuild because the kernel package already generated the initramfs.
 mkinitcpio --allpresets
 
 # Install Limine in the dedicated directory and in the UEFI fallback path, which
@@ -111,8 +112,8 @@ echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel
 chmod 0440 /etc/sudoers.d/10-wheel
 
 systemctl enable \
-    dhcpcd.service docker.service systemd-timesyncd.service \
-    paccache.timer reflector.timer
+    dhcpcd.service docker.service lact.service power-profiles-daemon.service systemd-timesyncd.service \
+    fstrim.timer paccache.timer reflector.timer
 
 # Trying to use "--user" here fails in chroot because there is no running user
 # manager or D-Bus session to talk to.

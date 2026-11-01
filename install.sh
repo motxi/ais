@@ -170,6 +170,18 @@ printf '%s\n' "${LOCALES[@]}" > /mnt/etc/locale.gen
 
 ROOT_PARTUUID=$(blkid --match-tag PARTUUID --output value "${PART_PREFIX}2")
 
+PP_FEATURE_MASK_PATH='/sys/module/amdgpu/parameters/ppfeaturemask'
+default_mask='0xfff7bfff'
+
+if [[ -r "${PP_FEATURE_MASK_PATH}" ]]; then
+    default_mask=$(<"${PP_FEATURE_MASK_PATH}")
+fi
+
+# The amdgpu's default ppfeaturemask with the overdrive bit (0x4000) set, which
+# unlocks overclocking and undervolting. Falls back to the kernel default when
+# the amdgpu module isn't loaded in the live environment.
+PP_FEATURE_MASK=$(printf '0x%x' $(( default_mask | 0x4000 )))
+
 # Limine looks for its config in the root of the partition it was loaded from,
 # which is the ESP (mounted at /boot).
 #
@@ -180,7 +192,7 @@ timeout: 5
 /Arch Linux
     protocol: linux
     path: boot():/vmlinuz-linux
-    cmdline: root=PARTUUID=${ROOT_PARTUUID} rw
+    cmdline: root=PARTUUID=${ROOT_PARTUUID} rw amdgpu.ppfeaturemask=${PP_FEATURE_MASK}
     module_path: boot():/amd-ucode.img
     module_path: boot():/initramfs-linux.img
 
