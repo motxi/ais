@@ -1,5 +1,8 @@
 # ais - Arch Install Script
 
-This is **not** meant to be run directly as it's something I made specifically
-for me. However, the script itself is really simple and can be modified and
-extended in many ways.
+> [!CAUTION]
+> Do **NOT** run without reading the code first.
+> This script is extremely opinionated and made for my own machine.
+> Worst-case scenario you might wipe your entire disk.
+
+See `packages.sh` for a quick overview of what the system contains.
