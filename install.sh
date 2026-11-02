@@ -4,6 +4,10 @@ set -euo pipefail
 
 exec > >(tee install.log) 2>&1 || true
 
+# -----------------
+# USER CONFIG START
+# -----------------
+
 # Must be a valid block device without the partition number.
 # Run `fdisk -l` for possible values.
 readonly DRIVE='/dev/sda'
@@ -20,15 +24,22 @@ readonly TIMEZONE='Europe/Madrid'
 readonly USERNAME='motxi'
 readonly HOSTNAME='arch'
 
+# ---------------
+# USER CONFIG END
+# ---------------
+
 readonly R='\033[1;31m' # Red
 readonly G='\033[1;32m' # Green
 readonly B='\033[1;34m' # Blue
 readonly S='\033[0m' # Reset
 
-# The chroot script must live next to this one.
-readonly SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
 readonly CHROOT_SCRIPT="${SCRIPT_DIR}/chroot.sh"
 readonly CHROOT_SCRIPT_DEST='/root/chroot.sh'
+
+readonly PACKAGES_SCRIPT="${SCRIPT_DIR}/packages.sh"
+readonly PACKAGES_SCRIPT_DEST='/root/packages.sh'
 
 MOUNTED=0
 
@@ -69,7 +80,7 @@ cleanup() {
     trap - EXIT
 
     if (( MOUNTED )); then
-        rm --force "/mnt${CHROOT_SCRIPT_DEST}"
+        rm --force "/mnt${CHROOT_SCRIPT_DEST}" "/mnt${PACKAGES_SCRIPT}"
 
         say green 'Unmounting /mnt...'
         umount --recursive /mnt || die 'Failed to unmount /mnt.'
@@ -99,7 +110,9 @@ platform_size=$(cat /sys/firmware/efi/fw_platform_size 2> /dev/null || true)
 [[ "${platform_size}" == @(32|64) ]] || die 'This script only works in UEFI mode.'
 [[ -f /usr/bin/pacstrap ]] || die 'This script must be run from a valid installation environment.'
 [[ -b "${DRIVE}" ]] || die 'The selected drive is not a valid block device.'
+
 [[ -f "${CHROOT_SCRIPT}" ]] || die "Missing chroot script: ${CHROOT_SCRIPT}."
+[[ -f "${PACKAGES_SCRIPT}" ]] || die "Missing packages script: ${PACKAGES_SCRIPT}."
 
 loadkeys "${KEYMAP}" || die "Failed to load keymap ${KEYMAP}."
 timedatectl set-ntp true
@@ -206,6 +219,9 @@ LIMINE
 # afterwards (or by the cleanup trap if anything fails).
 install --mode 0700 "${CHROOT_SCRIPT}" "/mnt${CHROOT_SCRIPT_DEST}"
 
+# Copy the "packages.sh" script too.
+install --mode 0600 "${PACKAGES_SCRIPT}" "/mnt${PACKAGES_SCRIPT_DEST}"
+
 arch-chroot /mnt /usr/bin/env \
     TIMEZONE="${TIMEZONE}" \
     KEYMAP="${KEYMAP}" \
@@ -215,7 +231,7 @@ arch-chroot /mnt /usr/bin/env \
     bash "${CHROOT_SCRIPT_DEST}" \
     || die 'The chroot script failed.'
 
-rm --force "/mnt${CHROOT_SCRIPT_DEST}"
+rm --force "/mnt${CHROOT_SCRIPT_DEST}" "/mnt${PACKAGES_SCRIPT_DEST}"
 
 set_password root
 set_password "${USERNAME}"

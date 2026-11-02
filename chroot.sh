@@ -12,6 +12,8 @@ set -euo pipefail
 : "${USERNAME:?Must be set by install.sh}"
 : "${DRIVE:?Must be set by install.sh}"
 
+source "$(dirname "$0")/packages.sh"
+
 ln --symbolic --force "/usr/share/zoneinfo/${TIMEZONE}" /etc/localtime
 hwclock --systohc
 
@@ -30,35 +32,15 @@ HOSTS
 # Enable multilib packages in pacman.
 sed -i '/^#\[multilib\]/{s/^#//;n;s/^#//}' /etc/pacman.conf
 
-pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always \
-    amd-ucode arandr \
-    base base-devel bat btop \
-    dex dhcpcd docker docker-compose dosfstools dunst \
-    efibootmgr eza \
-    fd feh ffmpeg firefox fwupd fzf \
-    git \
-    headsetcontrol \
-    i3-wm i3lock i3status imagemagick \
-    jq \
-    keepassxc kitty \
-    lact lib32-mesa lib32-vulkan-radeon libnotify libva-utils limine linux linux-firmware ly \
-    man-db man-pages mesa memtest86+-efi mpv \
-    neovim noto-fonts noto-fonts-cjk noto-fonts-emoji noto-fonts-extra nvtop \
-    openssh \
-    pacman-contrib picom pipewire pipewire-alsa pipewire-jack pipewire-pulse playerctl polkit power-profiles-daemon python \
-    reflector ripgrep rofi rustup \
-    scrot shellcheck sshfs \
-    tree ttf-dejavu ttf-liberation ttf-mononoki-nerd \
-    unp unrar unzip uv \
-    vulkan-radeon \
-    wget wireplumber \
-    xclip xdg-user-dirs xdg-utils xorg-server xorg-xinit xorg-xinput xorg-xset xsel xss-lock \
-    yazi yt-dlp \
-    zoxide zsh zsh-autosuggestions zsh-syntax-highlighting
+pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always "${PACMAN_PACKAGES[@]}"
 
 # Load amdgpu in the initramfs (early KMS).
 mkdir --parents /etc/mkinitcpio.conf.d
 echo 'MODULES+=(amdgpu)' > /etc/mkinitcpio.conf.d/amdgpu.conf
+
+cat > /etc/mkinitcpio.conf.d/hooks.conf << 'HOOKS'
+HOOKS=(base udev autodetect microcode modconf consolefont kms keyboard keymap block filesystems fsck encrypt)
+HOOKS
 
 # Rebuild because the kernel package already generated the initramfs.
 mkinitcpio --allpresets
@@ -107,13 +89,13 @@ When = PostTransaction
 Exec = /usr/local/bin/limine-deploy
 LIMINE_HOOK
 
-useradd --create-home --groups wheel "${USERNAME}"
+useradd --create-home --groups wheel,docker,gamemode "${USERNAME}"
 echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel
 chmod 0440 /etc/sudoers.d/10-wheel
 
 systemctl enable \
     dhcpcd.service docker.service lact.service power-profiles-daemon.service systemd-timesyncd.service \
-    fstrim.timer paccache.timer reflector.timer
+    fstrim.timer fwupd-refresh.timer paccache.timer pacman-filesdb-refresh.timer reflector.timer
 
 # Trying to use "--user" here fails in chroot because there is no running user
 # manager or D-Bus session to talk to.
