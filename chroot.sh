@@ -93,11 +93,29 @@ useradd --create-home --groups wheel,docker,gamemode "${USERNAME}"
 echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel
 chmod 0440 /etc/sudoers.d/10-wheel
 
+# Build and install paru as the new user.
+echo "${USERNAME} ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/99-paru-install
+chmod 0440 /etc/sudoers.d/99-paru-install
+
+runuser -l "${USERNAME}" -c '
+    set -euo pipefail
+
+    rustup default stable
+
+    git clone https://aur.archlinux.org/paru.git /tmp/paru
+    cd /tmp/paru
+    makepkg --syncdeps --install --noconfirm
+
+    rm --recursive --force /tmp/paru
+'
+
+rm --force /etc/sudoers.d/99-paru-install
+
 systemctl enable \
     dhcpcd.service docker.service lact.service power-profiles-daemon.service systemd-timesyncd.service \
     fstrim.timer fwupd-refresh.timer paccache.timer pacman-filesdb-refresh.timer reflector.timer
 
-# Trying to use "--user" here fails in chroot because there is no running user
+# Trying to use `--user` here fails in chroot because there is no running user
 # manager or D-Bus session to talk to.
 systemctl enable --global pipewire.service pipewire-pulse.service wireplumber.service
 
