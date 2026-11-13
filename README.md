@@ -1,4 +1,4 @@
-# ais - Arch Install Script
+# ais
 
 > [!CAUTION]
 > Do **NOT** run without reading the code first.
