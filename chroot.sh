@@ -112,7 +112,7 @@ runuser -l "${USERNAME}" -c '
 rm --force /etc/sudoers.d/99-paru-install
 
 systemctl enable \
-    dhcpcd.service docker.service lact.service power-profiles-daemon.service systemd-timesyncd.service \
+    dhcpcd.service docker.service lactd.service power-profiles-daemon.service systemd-timesyncd.service \
     fstrim.timer fwupd-refresh.timer paccache.timer pacman-filesdb-refresh.timer reflector.timer
 
 # Trying to use `--user` here fails in chroot because there is no running user
