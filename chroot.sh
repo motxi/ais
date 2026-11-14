@@ -97,17 +97,19 @@ chmod 0440 /etc/sudoers.d/10-wheel
 echo "${USERNAME} ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/99-paru-install
 chmod 0440 /etc/sudoers.d/99-paru-install
 
-runuser -l "${USERNAME}" -c '
+runuser -l "${USERNAME}" -c "
     set -euo pipefail
 
     rustup default stable
 
     git clone https://aur.archlinux.org/paru.git /tmp/paru
     cd /tmp/paru
-    makepkg --syncdeps --install --noconfirm
 
+    makepkg --syncdeps --install --noconfirm
     rm --recursive --force /tmp/paru
-'
+
+    paru --sync --skipreview --noconfirm ${PARU_PACKAGES[*]}
+"
 
 rm --force /etc/sudoers.d/99-paru-install
 
