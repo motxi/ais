@@ -1,8 +1,5 @@
-#! /usr/bin/env bash
-
-# This script is not meant to be run directly. It is copied into the new system
-# and executed inside the chroot by "install.sh", which passes the values below
-# through the environment.
+# Not meant to be run directly.
+# Copied into the new system and executed inside the chroot by "install.sh".
 
 set -euo pipefail
 

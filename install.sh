@@ -4,30 +4,6 @@ set -euo pipefail
 
 exec > >(tee install.log) 2>&1 || true
 
-# -----------------
-# USER CONFIG START
-# -----------------
-
-# Must be a valid block device without the partition number.
-# Run `fdisk -l` for possible values.
-readonly DRIVE='/dev/sda'
-
-# Run `localectl list-keymaps` for possible values.
-readonly KEYMAP='us'
-
-# Run `cat /etc/locale.gen` for possible values.
-readonly LOCALES=('en_US.UTF-8 UTF-8' 'es_ES.UTF-8 UTF-8' 'ja_JP.UTF-8 UTF-8')
-
-# Must follow the format "Zone/Location".
-readonly TIMEZONE='Europe/Madrid'
-
-readonly USERNAME='motxi'
-readonly HOSTNAME='arch'
-
-# ---------------
-# USER CONFIG END
-# ---------------
-
 readonly R='\033[1;31m' # Red
 readonly G='\033[1;32m' # Green
 readonly B='\033[1;34m' # Blue
@@ -35,11 +11,36 @@ readonly S='\033[0m' # Reset
 
 readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
+readonly CONFIG_FILE="${SCRIPT_DIR}/config.sh"
+
 readonly CHROOT_SCRIPT="${SCRIPT_DIR}/chroot.sh"
 readonly CHROOT_SCRIPT_DEST='/root/chroot.sh'
 
 readonly PACKAGES_SCRIPT="${SCRIPT_DIR}/packages.sh"
 readonly PACKAGES_SCRIPT_DEST='/root/packages.sh'
+
+[[ -f "${CONFIG_FILE}" ]] || {
+    echo "Missing config file: ${CONFIG_FILE}" >&2
+    exit 1
+}
+
+# Bash always sets `HOSTNAME` itself, so clear it to detect a missing value.
+unset HOSTNAME
+
+source "${CONFIG_FILE}"
+
+: "${DRIVE:?Must be set in config.sh}"
+: "${KEYMAP:?Must be set in config.sh}"
+: "${TIMEZONE:?Must be set in config.sh}"
+: "${USERNAME:?Must be set in config.sh}"
+: "${HOSTNAME:?Must be set in config.sh}"
+
+(( ${#LOCALES[@]} )) || {
+    echo 'LOCALES must not be empty.' >&2
+    exit 1
+}
+
+readonly DRIVE KEYMAP LOCALES TIMEZONE USERNAME HOSTNAME
 
 MOUNTED=0
 

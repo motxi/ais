@@ -1,6 +1,7 @@
-#! /usr/bin/env bash
+# Not meant to be run directly.
+# Sourced by "chroot.sh".
 
-readonly _BASE=(
+_BASE=(
     base
     base-devel
     linux
@@ -11,14 +12,14 @@ readonly _BASE=(
     polkit
 )
 
-readonly _BOOT=(
+_BOOT=(
     dosfstools
     efibootmgr
     limine
     memtest86+-efi
 )
 
-readonly _AUDIO=(
+_AUDIO=(
     pipewire
     pipewire-alsa
     pipewire-jack
@@ -28,7 +29,7 @@ readonly _AUDIO=(
     headsetcontrol
 )
 
-readonly _VIDEO=(
+_VIDEO=(
     lact
     lib32-mesa
     lib32-vulkan-radeon
@@ -38,14 +39,14 @@ readonly _VIDEO=(
     vulkan-radeon
 )
 
-readonly _NETWORK=(
+_NETWORK=(
     dhcpcd
     openssh
     sshfs
     wget
 )
 
-readonly _XORG=(
+_XORG=(
     xclip
     xdg-user-dirs
     xdg-utils
@@ -57,7 +58,7 @@ readonly _XORG=(
     xss-lock
 )
 
-readonly _DESKTOP=(
+_DESKTOP=(
     arandr
     dex
     dunst
@@ -72,14 +73,14 @@ readonly _DESKTOP=(
     scrot
 )
 
-readonly _TERMINAL=(
+_TERMINAL=(
     kitty
     zsh
     zsh-autosuggestions
     zsh-syntax-highlighting
 )
 
-readonly _CLI=(
+_CLI=(
     bat
     btop
     eza
@@ -96,7 +97,7 @@ readonly _CLI=(
     zoxide
 )
 
-readonly _DEV=(
+_DEV=(
     docker
     docker-compose
     git
@@ -106,19 +107,19 @@ readonly _DEV=(
     uv
 )
 
-readonly _APPS=(
+_APPS=(
     firefox
     keepassxc
 )
 
-readonly _MEDIA=(
+_MEDIA=(
     ffmpeg
     imagemagick
     mpv
     yt-dlp
 )
 
-readonly _GAMING=(
+_GAMING=(
     gamemode
     lib32-gamemode
     lib32-mangohud
@@ -126,7 +127,7 @@ readonly _GAMING=(
     steam
 )
 
-readonly _FONTS=(
+_FONTS=(
     noto-fonts
     noto-fonts-cjk
     noto-fonts-emoji
@@ -136,7 +137,7 @@ readonly _FONTS=(
     ttf-mononoki-nerd
 )
 
-readonly _MAINTENANCE=(
+_MAINTENANCE=(
     fwupd
     pacman-contrib
     power-profiles-daemon
