@@ -76,7 +76,9 @@ cleanup() {
     fi
 
     if (( status != 0 )); then
+        say ''
         say red "The installation failed with exit code ${status}."
+        say ''
 
         if [[ "${HIDE_COMMAND_OUTPUT:-false}" == true ]]; then
             say red "Last lines of the log (\"${LOG_FILE}\"):"

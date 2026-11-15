@@ -12,11 +12,15 @@ readonly REPO='motxi/ais'
 readonly BRANCH='master'
 
 readonly ARCHIVE_URL="https://github.com/${REPO}/archive/refs/heads/${BRANCH}.tar.gz"
-readonly ARCHIVE='ais.tar.gz'
+readonly ARCHIVE="${BRANCH}.tar.gz"
 
 readonly DESTINATION='ais'
 
+echo "Downloading \"${REPO}\" (${BRANCH})..."
+
 curl --location --fail --silent --show-error --output "${ARCHIVE}" "${ARCHIVE_URL}"
+
+echo "Extracting the scripts to \"${DESTINATION}\"..."
 
 # Start from a clean directory so no stale files from a previous run are left.
 rm --recursive --force "${DESTINATION}"
@@ -35,10 +39,13 @@ tar \
 
 rm --force "${ARCHIVE}"
 
-[[ -f "${DESTINATION}/install.sh" ]]
+[[ -f "${DESTINATION}/install.sh" ]] || {
+    echo "Missing \"install.sh\" in the \"scripts/\" directory of \"${REPO}\" (${BRANCH})." >&2
+    exit 1
+}
 
 chmod +x "${DESTINATION}/install.sh"
 
 echo 'Done!'
-echo "Run \"${DESTINATION}/install.sh\" to start the installation."
-echo "You should manually review the files inside ${DESTINATION} first."
+echo "Run \"./${DESTINATION}/install.sh\" to start the installation."
+echo "You should manually review the files inside \"${DESTINATION}\" first."
