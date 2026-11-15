@@ -152,6 +152,14 @@ rm --force "${PARU_SUDOERS}"
 
 trap - EXIT
 
+# Unlock the login keyring with the login password, so the Secret Service is
+# ready without opening any database.
+say blue 'Enabling the login keyring for Ly...'
+cat >> /etc/pam.d/ly << 'PAM'
+auth optional pam_gnome_keyring.so
+session optional pam_gnome_keyring.so auto_start
+PAM
+
 say blue 'Enabling the system services and timers...'
 systemctl enable \
     dhcpcd.service docker.service lactd.service power-profiles-daemon.service systemd-timesyncd.service \

@@ -63,10 +63,12 @@ _DESKTOP=(
     dex
     dunst
     feh
+    gnome-keyring
     i3-wm
     i3lock
     i3status
     libnotify
+    libsecret
     ly
     picom
     rofi
