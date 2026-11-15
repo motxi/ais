@@ -13,12 +13,6 @@ DRIVE='/dev/sda'
 # Run `localectl list-keymaps` for possible values.
 KEYMAP='us'
 
-# Locales to generate written to "/etc/locale.gen". The system language (LANG)
-# is always "en_US.UTF-8", so keep that one in the list.
-#
-# Run `cat /etc/locale.gen` for possible values.
-LOCALES=('en_US.UTF-8 UTF-8' 'es_ES.UTF-8 UTF-8' 'ja_JP.UTF-8 UTF-8')
-
 # System timezone. Must follow the format "Zone/Location".
 #
 # Run `timedatectl list-timezones` for possible values.
@@ -26,3 +20,13 @@ TIMEZONE='Europe/Madrid'
 
 USERNAME='motxi'
 HOSTNAME='arch'
+
+# Locales to generate written to "/etc/locale.gen". The system language (LANG)
+# is always "en_US.UTF-8", so keep that one in the list.
+#
+# Run `cat /etc/locale.gen` for possible values.
+LOCALES=('en_US.UTF-8 UTF-8' 'es_ES.UTF-8 UTF-8' 'ja_JP.UTF-8 UTF-8')
+
+# If set to "true" all command output will be silenced from the console (the
+# log file will still contain everything).
+HIDE_COMMAND_OUTPUT='false'

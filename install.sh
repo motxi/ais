@@ -4,7 +4,7 @@ set -euo pipefail
 
 readonly SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
-exec > >(tee "${SCRIPT_DIR}/install.log") 2>&1
+readonly LOG_FILE="${SCRIPT_DIR}/install.log"
 
 readonly UTILS_SCRIPT="${SCRIPT_DIR}/utils.sh"
 
@@ -37,29 +37,39 @@ source "${CONFIG_SCRIPT}"
 [[ -n "${TIMEZONE:-}" ]] || die 'TIMEZONE must be set in "config.sh".'
 [[ -n "${USERNAME:-}" ]] || die 'USERNAME must be set in "config.sh".'
 [[ -n "${HOSTNAME:-}" ]] || die 'HOSTNAME must be set in "config.sh".'
+
 (( ${#LOCALES[@]} )) || die 'LOCALES must not be empty in "config.sh".'
 
-readonly DRIVE KEYMAP LOCALES TIMEZONE USERNAME HOSTNAME
+[[ "${HIDE_COMMAND_OUTPUT:-}" == @(true|false) ]] || die 'HIDE_COMMAND_OUTPUT must be "true" or "false" in "config.sh".'
+
+readonly DRIVE KEYMAP LOCALES TIMEZONE USERNAME HOSTNAME HIDE_COMMAND_OUTPUT
+
+# File descriptor 3 always points to the real terminal, so the messages (and
+# anything interactive) can still reach it when the command output is hidden.
+exec 3>&2
+
+# The log file always gets everything. When the command output is hidden only
+# the log receives it, and `say` prints the messages to the terminal itself.
+if [[ "${HIDE_COMMAND_OUTPUT}" == true ]]; then
+    exec > "${LOG_FILE}" 2>&1
+else
+    exec > >(tee "${LOG_FILE}") 2>&1
+fi
 
 trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-clear || true
-
 setfont ter-120b || true
-
-say blue 'Checking the installation environment...'
 
 (( EUID == 0 )) || die 'This script must be run as root.'
 
 if mountpoint --quiet /mnt; then
     say blue 'Unmounting previous "/mnt"...'
-    umount --recursive /mnt || die 'Failed to unmount "/mnt".'
+    umount --recursive /mnt
 fi
 
 say blue 'Checking the internet connection...'
-
 curl --fail --silent --head --max-time 5 https://archlinux.org > /dev/null \
     || die 'No internet connection. Connect to the network and try again.'
 
@@ -71,47 +81,47 @@ platform_size=$(cat /sys/firmware/efi/fw_platform_size 2> /dev/null || true)
 [[ -f /usr/bin/pacstrap ]] || die 'This script must be run from a valid installation environment.'
 [[ -b "${DRIVE}" ]] || die "The selected drive \"${DRIVE}\" is not a valid block device."
 
+[[ -z "$(lsblk --noheadings --raw --output MOUNTPOINTS "${DRIVE}" | tr -d '[:space:]')" ]] \
+    || die "The drive \"${DRIVE}\" has mounted partitions. Make sure it's not the installation medium."
+
 say green "UEFI mode detected (${platform_size}-bit) and \"${DRIVE}\" is a valid drive."
 
 say blue "Loading the keymap \"${KEYMAP}\"..."
 loadkeys "${KEYMAP}" || die "Failed to load the keymap \"${KEYMAP}\"."
 
-say blue 'Enabling time synchronization (NTP)...'
-timedatectl set-ntp true || die 'Failed to enable time synchronization.'
+timedatectl set-ntp true
 
-clear || true
-
+say ''
 say blue 'Installation summary:'
 say ''
-say blue "    - Drive    : ${DRIVE}"
+
+say blue "    - Drive    : ${DRIVE} ($(lsblk --nodeps --noheadings --output SIZE,MODEL "${DRIVE}" | xargs))"
 say blue "    - Keymap   : ${KEYMAP}"
 say blue "    - Timezone : ${TIMEZONE}"
-say blue "    - Locales  : ${LOCALES[*]}"
 say blue "    - Username : ${USERNAME}"
 say blue "    - Hostname : ${HOSTNAME}"
+say blue "    - Locales  : ${LOCALES[*]}"
 say ''
-say blue "Arch Linux will be installed in \"${DRIVE}\"."
-say ''
+
 say red 'The drive will be completely wiped.'
 say red 'This CAN NOT be undone.'
 say ''
-say blue "Type \"${DRIVE}\" to confirm:"
 
+say blue "Type \"${DRIVE}\" (without quotes) to confirm:"
 say ''
 
 read -r decision
 
 [[ "${decision}" == "${DRIVE}" ]] || die 'Installation aborted by the user.'
 
-clear || true
+clear_screen
 
 say blue "Wiping \"${DRIVE}\"..."
-
-wipefs --all "${DRIVE}" || die 'Failed to wipe the filesystem signatures.'
-sgdisk --zap-all "${DRIVE}" || die 'Failed to wipe the drive data structures.'
+wipefs --all "${DRIVE}"
+sgdisk --zap-all "${DRIVE}"
 
 say green "The drive \"${DRIVE}\" has been successfully wiped."
-say green 'Now the drive will be partitioned...'
+say green 'Now the drive will be partitioned.'
 
 # Feel free to modify the partitioning structure as you like.
 #
@@ -130,10 +140,9 @@ parted "${DRIVE}" --script --align minimal \
     type 1 C12A7328-F81F-11D2-BA4B-00A0C93EC93B \
     type 2 4F68BCE3-E8CD-4DB1-96E7-FBCAF984B709 \
     align-check minimal 1 \
-    align-check minimal 2 \
-    || die 'Failed to partition the drive.'
+    align-check minimal 2
 
-udevadm settle || die 'Failed to wait for the partitions to be ready.'
+udevadm settle
 
 # NVMe and MMC devices name their partitions using the "<drive>p<N>" format
 # instead of "<drive><N>".
@@ -147,44 +156,34 @@ say green "Created the EFI partition (${PART_PREFIX}1)."
 say green "Created the ROOT partition (${PART_PREFIX}2)."
 
 say blue "Formatting ${PART_PREFIX}1 as FAT32 (EFI)..."
-mkfs.fat -F 32 -n EFI "${PART_PREFIX}1" || die "Failed to format \"${PART_PREFIX}1\" as FAT32."
+mkfs.fat -F 32 -n EFI "${PART_PREFIX}1"
 
 say blue "Formatting ${PART_PREFIX}2 as ext4 (ROOT)..."
-mkfs.ext4 -L ROOT "${PART_PREFIX}2" || die "Failed to format \"${PART_PREFIX}2\" as ext4."
+mkfs.ext4 -L ROOT "${PART_PREFIX}2"
 
 say blue 'Mounting the partitions...'
-
-mount "${PART_PREFIX}2" /mnt || die "Failed to mount \"${PART_PREFIX}2\" at \"/mnt\"."
+mount "${PART_PREFIX}2" /mnt
 MOUNTED=1
-mount --mkdir --options umask=0077 "${PART_PREFIX}1" /mnt/boot \
-    || die "Failed to mount \"${PART_PREFIX}1\" at \"/mnt/boot\"."
+mount --mkdir --options umask=0077 "${PART_PREFIX}1" /mnt/boot
 
 say green 'ROOT partition mounted at "/mnt".'
 say green 'EFI partition mounted at "/mnt/boot".'
 
 say blue 'Installing the base system. This can take a few minutes...'
-
-pacstrap -K /mnt base || die 'Failed to install the base system.'
+pacstrap -K /mnt base
 
 say green 'The base system has been installed.'
 
-say blue 'Generating the fstab file...'
-
 # Generate and cleanup the fstab file (personal preference).
-genfstab -t PARTUUID /mnt | tr -s '[:blank:]' ' ' > /mnt/etc/fstab \
-    || die 'Failed to generate the fstab file.'
-
-say blue 'Writing the locales...'
+say blue 'Generating the fstab file...'
+genfstab -t PARTUUID /mnt | tr -s '[:blank:]' ' ' > /mnt/etc/fstab
 
 # Arrays can't be passed through the environment, so the locales are written
 # from outside the chroot.
-printf '%s\n' "${LOCALES[@]}" > /mnt/etc/locale.gen \
-    || die 'Failed to write the locales.'
+say blue 'Writing the locales...'
+printf '%s\n' "${LOCALES[@]}" > /mnt/etc/locale.gen
 
-say blue 'Writing the Limine boot configuration...'
-
-ROOT_PARTUUID=$(blkid --match-tag PARTUUID --output value "${PART_PREFIX}2") \
-    || die "Failed to read the PARTUUID of \"${PART_PREFIX}2\"."
+ROOT_PARTUUID=$(blkid --match-tag PARTUUID --output value "${PART_PREFIX}2")
 
 PP_FEATURE_MASK_PATH='/sys/module/amdgpu/parameters/ppfeaturemask'
 default_mask='0xfff7bfff'
@@ -202,7 +201,7 @@ PP_FEATURE_MASK=$(printf '0x%x' $(( default_mask | 0x4000 )))
 # which is the ESP (mounted at "/boot").
 #
 # This heredoc is intentionally unquoted so `${ROOT_PARTUUID}` gets expanded.
-cat > /mnt/boot/limine.conf << LIMINE || die 'Failed to write the Limine configuration.'
+cat > /mnt/boot/limine.conf << LIMINE
 timeout: 5
 
 /Arch Linux
@@ -219,43 +218,36 @@ LIMINE
 
 say green "Limine configuration written (PP_FEATURE_MASK = ${PP_FEATURE_MASK})."
 
-say blue 'Copying the chroot scripts into the new system...'
-
 # Copy the chroot script into the new system and run it there. The values it
 # needs are passed explicitly through the environment and the copy is removed
 # afterwards (or by the cleanup trap if anything fails).
-install --mode 0700 "${CHROOT_SCRIPT}" "/mnt${CHROOT_SCRIPT_DEST}" \
-    || die 'Failed to copy the chroot script.'
+install --mode 0700 "${CHROOT_SCRIPT}" "/mnt${CHROOT_SCRIPT_DEST}"
 
 # Copy the "packages.sh" and "utils.sh" scripts too, since the chroot script
 # sources them.
-install --mode 0600 "${PACKAGES_SCRIPT}" "/mnt${PACKAGES_SCRIPT_DEST}" \
-    || die 'Failed to copy the packages script.'
-
-install --mode 0600 "${UTILS_SCRIPT}" "/mnt${UTILS_SCRIPT_DEST}" \
-    || die 'Failed to copy the utils script.'
+install --mode 0600 "${PACKAGES_SCRIPT}" "/mnt${PACKAGES_SCRIPT_DEST}"
+install --mode 0600 "${UTILS_SCRIPT}" "/mnt${UTILS_SCRIPT_DEST}"
 
 say blue 'Configuring the system inside the chroot...'
 say blue 'This installs all the packages, the bootloader and the services, so it will take a while...'
 
 arch-chroot /mnt /usr/bin/env \
-    TIMEZONE="${TIMEZONE}" \
-    KEYMAP="${KEYMAP}" \
-    HOSTNAME="${HOSTNAME}" \
-    USERNAME="${USERNAME}" \
     DRIVE="${DRIVE}" \
-    bash "${CHROOT_SCRIPT_DEST}" \
-    || die 'The chroot script failed.'
+    KEYMAP="${KEYMAP}" \
+    TIMEZONE="${TIMEZONE}" \
+    USERNAME="${USERNAME}" \
+    HOSTNAME="${HOSTNAME}" \
+    HIDE_COMMAND_OUTPUT="${HIDE_COMMAND_OUTPUT}" \
+    bash "${CHROOT_SCRIPT_DEST}"
 
 say green 'The system has been configured.'
 
-say blue 'Removing the temporary installation scripts...'
 rm --force "/mnt${CHROOT_SCRIPT_DEST}" "/mnt${PACKAGES_SCRIPT_DEST}" "/mnt${UTILS_SCRIPT_DEST}"
 
 password root
 password "${USERNAME}"
 
-clear || true
+clear_screen
 
 say green 'Installation successfully finished!'
 say green 'You may reboot now.'
