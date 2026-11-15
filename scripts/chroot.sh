@@ -14,13 +14,14 @@ source "$(dirname "$0")/packages.sh"
 
 readonly PARU_SUDOERS='/etc/sudoers.d/99-paru-install'
 
-say blue "Setting the timezone to \"${TIMEZONE}\"..."
+say blue "Setting the timezone to \"${TIMEZONE}\" and syncing the hardware clock..."
 ln --symbolic --force "/usr/share/zoneinfo/${TIMEZONE}" /etc/localtime
 hwclock --systohc
 
 say blue 'Generating the locales...'
 locale-gen
 
+say blue "Setting the system language and the console keymap (\"${KEYMAP}\")..."
 echo 'LANG=en_US.UTF-8' > /etc/locale.conf
 echo "KEYMAP=${KEYMAP}" > /etc/vconsole.conf
 
@@ -33,6 +34,8 @@ cat > /etc/hosts << HOSTS
 127.0.1.1 ${HOSTNAME}.localdomain ${HOSTNAME}
 HOSTS
 
+say green 'The time, language and hostname settings have been applied.'
+
 # Enable multilib packages in pacman.
 say blue 'Enabling the multilib repository...'
 sed -i '/^#\[multilib\]/{s/^#//;n;s/^#//}' /etc/pacman.conf
@@ -43,6 +46,7 @@ pacman --sync --refresh --refresh --sysupgrade --noconfirm --color always "${PAC
 say green 'The official packages have been installed.'
 
 # Load amdgpu in the initramfs (early KMS).
+say blue 'Configuring the initramfs (early amdgpu KMS)...'
 mkdir --parents /etc/mkinitcpio.conf.d
 echo 'MODULES+=(amdgpu)' > /etc/mkinitcpio.conf.d/amdgpu.conf
 
@@ -58,21 +62,25 @@ say green 'The initramfs has been rebuilt.'
 
 # Install Limine in the dedicated directory and in the UEFI fallback path, which
 # firmware uses when it drops the efibootmgr entry.
-say blue 'Installing the Limine bootloader...'
+say blue 'Copying the Limine bootloader to the EFI partition...'
 mkdir --parents /boot/EFI/limine /boot/EFI/BOOT
 
 cp /usr/share/limine/BOOTX64.EFI /boot/EFI/limine/
 cp /usr/share/limine/BOOTX64.EFI /boot/EFI/BOOT/
 
 say blue 'Creating the UEFI boot entry...'
-efibootmgr \
+
+if efibootmgr \
     --create \
     --disk "${DRIVE}" \
     --part 1 \
     --label 'Limine' \
     --loader '\EFI\limine\BOOTX64.EFI' \
-    --unicode \
-    || say red 'Could not create the UEFI entry for Limine. The fallback path will be used.'
+    --unicode; then
+    say green 'The UEFI boot entry has been created.'
+else
+    say red 'Could not create the UEFI boot entry. The fallback path will be used instead.'
+fi
 
 # Keep the copies of the Limine binary up to date when the package is upgraded.
 say blue 'Adding a pacman hook to keep Limine up to date...'
@@ -105,24 +113,26 @@ LIMINE_HOOK
 
 say green 'The Limine bootloader has been installed.'
 
-say blue "Creating the user \"${USERNAME}\"..."
+say blue "Creating the user \"${USERNAME}\" and allowing the wheel group to use sudo..."
 useradd --create-home --groups wheel,docker,gamemode "${USERNAME}"
 
 echo '%wheel ALL=(ALL:ALL) ALL' > /etc/sudoers.d/10-wheel
 chmod 0440 /etc/sudoers.d/10-wheel
 
+say green "The user \"${USERNAME}\" has been created."
+
 # The `makepkg` script refuses to run as root, so paru and the AUR packages are
 # built as the new user. `makepkg` and `paru` call `sudo pacman`, and there is
 # no password prompt in a script, so a temporary passwordless rule is granted
 # and always removed afterwards, even if the build fails.
-say blue 'Granting temporary passwordless sudo for the AUR build...'
+say blue 'Granting temporary passwordless sudo for the AUR packages...'
 echo "${USERNAME} ALL=(ALL:ALL) NOPASSWD: ALL" > "${PARU_SUDOERS}"
 chmod 0440 "${PARU_SUDOERS}"
 
 trap 'rm --force "${PARU_SUDOERS}"' EXIT
 
 # `-l` gives a login shell so `HOME` and `PATH` are the user's, not root's.
-say blue "Installing paru and ${#PARU_PACKAGES[@]} AUR packages. This can take a while..."
+say blue "Installing paru and ${#PARU_PACKAGES[@]} AUR packages (${PARU_PACKAGES[*]}). This can take a while..."
 runuser -l "${USERNAME}" -c "
     set -euo pipefail
 
@@ -135,12 +145,12 @@ runuser -l "${USERNAME}" -c "
     paru --sync --skipreview --noconfirm ${PARU_PACKAGES[*]}
 " || die 'Failed to install paru or the AUR packages.'
 
+say green 'Paru and the AUR packages have been installed.'
+
 say blue 'Removing the temporary passwordless sudo rule...'
 rm --force "${PARU_SUDOERS}"
 
 trap - EXIT
-
-say green 'The AUR packages have been installed.'
 
 say blue 'Enabling the system services and timers...'
 systemctl enable \
@@ -149,7 +159,7 @@ systemctl enable \
 
 # Trying to use `--user` here fails in chroot because there is no running user
 # manager or D-Bus session to talk to.
-say blue 'Enabling the user services for everyone...'
+say blue 'Enabling the user services for all users...'
 systemctl enable --global pipewire.service pipewire-pulse.service wireplumber.service
 
 # The TTY service that Ly will run on must be disabled.

@@ -60,12 +60,16 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
+clear_screen
+
 setfont ter-120b || true
+
+say blue 'Checking the installation environment...'
 
 (( EUID == 0 )) || die 'This script must be run as root.'
 
 if mountpoint --quiet /mnt; then
-    say blue 'Unmounting previous "/mnt"...'
+    say blue 'Unmounting the previous "/mnt"...'
     umount --recursive /mnt
 fi
 
@@ -84,11 +88,12 @@ platform_size=$(cat /sys/firmware/efi/fw_platform_size 2> /dev/null || true)
 [[ -z "$(lsblk --noheadings --raw --output MOUNTPOINTS "${DRIVE}" | tr -d '[:space:]')" ]] \
     || die "The drive \"${DRIVE}\" has mounted partitions. Make sure it's not the installation medium."
 
-say green "UEFI mode detected (${platform_size}-bit) and \"${DRIVE}\" is a valid drive."
+say green "The system is booted in UEFI mode (${platform_size}-bit) and \"${DRIVE}\" is a valid, unmounted drive."
 
 say blue "Loading the keymap \"${KEYMAP}\"..."
 loadkeys "${KEYMAP}" || die "Failed to load the keymap \"${KEYMAP}\"."
 
+say blue 'Enabling time synchronization (NTP)...'
 timedatectl set-ntp true
 
 say ''
@@ -103,7 +108,7 @@ say blue "    - Hostname : ${HOSTNAME}"
 say blue "    - Locales  : ${LOCALES[*]}"
 say ''
 
-say red 'The drive will be completely wiped.'
+say red "Everything on \"${DRIVE}\" will be permanently erased."
 say red 'This CAN NOT be undone.'
 say ''
 
@@ -120,8 +125,7 @@ say blue "Wiping \"${DRIVE}\"..."
 wipefs --all "${DRIVE}"
 sgdisk --zap-all "${DRIVE}"
 
-say green "The drive \"${DRIVE}\" has been successfully wiped."
-say green 'Now the drive will be partitioned.'
+say green "The drive \"${DRIVE}\" has been wiped."
 
 # Feel free to modify the partitioning structure as you like.
 #
@@ -133,6 +137,7 @@ say green 'Now the drive will be partitioned.'
 #
 # Make sure to also modify the partition formatting/mounting structure below if
 # you change anything here.
+say blue "Partitioning \"${DRIVE}\"..."
 parted "${DRIVE}" --script --align minimal \
     mklabel gpt \
     mkpart EFI fat32 1MiB 513MiB \
@@ -152,8 +157,7 @@ if [[ "${DRIVE}" == *[0-9] ]]; then
     PART_PREFIX+='p'
 fi
 
-say green "Created the EFI partition (${PART_PREFIX}1)."
-say green "Created the ROOT partition (${PART_PREFIX}2)."
+say green "Created the EFI partition (${PART_PREFIX}1) and the ROOT partition (${PART_PREFIX}2)."
 
 say blue "Formatting ${PART_PREFIX}1 as FAT32 (EFI)..."
 mkfs.fat -F 32 -n EFI "${PART_PREFIX}1"
@@ -161,13 +165,14 @@ mkfs.fat -F 32 -n EFI "${PART_PREFIX}1"
 say blue "Formatting ${PART_PREFIX}2 as ext4 (ROOT)..."
 mkfs.ext4 -L ROOT "${PART_PREFIX}2"
 
+say green 'Both partitions have been formatted.'
+
 say blue 'Mounting the partitions...'
 mount --types ext4 "${PART_PREFIX}2" /mnt
 MOUNTED=1
 mount --mkdir --options umask=0077 "${PART_PREFIX}1" /mnt/boot
 
-say green 'ROOT partition mounted at "/mnt".'
-say green 'EFI partition mounted at "/mnt/boot".'
+say green 'The ROOT partition is mounted at "/mnt" and the EFI partition at "/mnt/boot".'
 
 say blue 'Installing the base system. This can take a few minutes...'
 pacstrap -K /mnt base
@@ -201,6 +206,7 @@ PP_FEATURE_MASK=$(printf '0x%x' $(( default_mask | 0x4000 )))
 # which is the ESP (mounted at "/boot").
 #
 # This heredoc is intentionally unquoted so `${ROOT_PARTUUID}` gets expanded.
+say blue 'Writing the Limine boot configuration...'
 cat > /mnt/boot/limine.conf << LIMINE
 timeout: 5
 
@@ -216,11 +222,12 @@ timeout: 5
     path: boot():/memtest86+/memtest86x64.efi
 LIMINE
 
-say green "Limine configuration written (PP_FEATURE_MASK = ${PP_FEATURE_MASK})."
+say green "The Limine configuration has been written (PP_FEATURE_MASK = ${PP_FEATURE_MASK})."
 
 # Copy the chroot script into the new system and run it there. The values it
 # needs are passed explicitly through the environment and the copy is removed
 # afterwards (or by the cleanup trap if anything fails).
+say blue 'Copying the chroot scripts into the new system...'
 install --mode 0700 "${CHROOT_SCRIPT}" "/mnt${CHROOT_SCRIPT_DEST}"
 
 # Copy the "packages.sh" and "utils.sh" scripts too, since the chroot script
@@ -242,6 +249,7 @@ arch-chroot /mnt /usr/bin/env \
 
 say green 'The system has been configured.'
 
+say blue 'Removing the temporary installation scripts...'
 rm --force "/mnt${CHROOT_SCRIPT_DEST}" "/mnt${PACKAGES_SCRIPT_DEST}" "/mnt${UTILS_SCRIPT_DEST}"
 
 password root
@@ -250,4 +258,4 @@ password "${USERNAME}"
 clear_screen
 
 say green 'Installation successfully finished!'
-say green 'You may reboot now.'
+say green 'Remove the installation medium and reboot when you are ready.'
