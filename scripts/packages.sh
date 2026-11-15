@@ -73,6 +73,11 @@ _DESKTOP=(
     scrot
 )
 
+_THEMES=(
+    adwaita-icon-theme
+    gnome-themes-extra
+)
+
 _TERMINAL=(
     kitty
     zsh
@@ -152,6 +157,7 @@ readonly PACMAN_PACKAGES=(
     "${_NETWORK[@]}"
     "${_XORG[@]}"
     "${_DESKTOP[@]}"
+    "${_THEMES[@]}"
     "${_TERMINAL[@]}"
     "${_CLI[@]}"
     "${_DEV[@]}"
