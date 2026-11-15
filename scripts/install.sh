@@ -162,7 +162,7 @@ say blue "Formatting ${PART_PREFIX}2 as ext4 (ROOT)..."
 mkfs.ext4 -L ROOT "${PART_PREFIX}2"
 
 say blue 'Mounting the partitions...'
-mount "${PART_PREFIX}2" /mnt
+mount --types ext4 "${PART_PREFIX}2" /mnt
 MOUNTED=1
 mount --mkdir --options umask=0077 "${PART_PREFIX}1" /mnt/boot
 
