@@ -122,20 +122,18 @@ chmod 0440 "${PARU_SUDOERS}"
 trap 'rm --force "${PARU_SUDOERS}"' EXIT
 
 # `-l` gives a login shell so `HOME` and `PATH` are the user's, not root's.
-say blue "Building paru and installing ${#PARU_PACKAGES[@]} AUR packages. This can take a while..."
+say blue "Installing paru and ${#PARU_PACKAGES[@]} AUR packages. This can take a while..."
 runuser -l "${USERNAME}" -c "
     set -euo pipefail
 
-    rustup default stable
-
-    git clone https://aur.archlinux.org/paru.git /tmp/paru
-    cd /tmp/paru
+    git clone https://aur.archlinux.org/paru-bin.git /tmp/paru-bin
+    cd /tmp/paru-bin
 
     makepkg --syncdeps --install --noconfirm
-    rm --recursive --force /tmp/paru
+    rm --recursive --force /tmp/paru-bin
 
     paru --sync --skipreview --noconfirm ${PARU_PACKAGES[*]}
-" || die 'Failed to build paru or install the AUR packages.'
+" || die 'Failed to install paru or the AUR packages.'
 
 say blue 'Removing the temporary passwordless sudo rule...'
 rm --force "${PARU_SUDOERS}"
