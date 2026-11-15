@@ -45,6 +45,8 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
+clear || true
+
 setfont ter-120b || true
 
 say blue 'Checking the installation environment...'
@@ -81,7 +83,6 @@ clear || true
 
 say blue 'Installation summary:'
 say ''
-
 say blue "    - Drive    : ${DRIVE}"
 say blue "    - Keymap   : ${KEYMAP}"
 say blue "    - Timezone : ${TIMEZONE}"
@@ -89,13 +90,13 @@ say blue "    - Locales  : ${LOCALES[*]}"
 say blue "    - Username : ${USERNAME}"
 say blue "    - Hostname : ${HOSTNAME}"
 say ''
-
 say blue "Arch Linux will be installed in \"${DRIVE}\"."
+say ''
 say red 'The drive will be completely wiped.'
 say red 'This CAN NOT be undone.'
 say ''
-
 say blue "Type \"${DRIVE}\" to confirm:"
+
 say ''
 
 read -r decision
