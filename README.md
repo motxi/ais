@@ -14,7 +14,7 @@ Ethernet works out of the box, and for Wi-Fi you can use [`iwctl`](https://wiki.
 Then download the installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/motxi/ais/main/ais.sh | bash
+curl -fsSL https://raw.githubusercontent.com/motxi/ais/master/ais.sh | bash
 ```
 
 This extracts all the scripts to `./ais` and makes `install.sh` executable.

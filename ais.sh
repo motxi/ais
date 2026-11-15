@@ -23,7 +23,7 @@ rm --recursive --force "${DESTINATION}"
 mkdir --parents "${DESTINATION}"
 
 # The archive contains a top-level "<repo>-<branch>" directory. Only the
-# "scripts" directory is extracted, and both leading directories are stripped
+# "scripts/" directory is extracted, and both leading directories are stripped
 # so the scripts end up directly in "${DESTINATION}".
 tar \
     --extract \
@@ -38,3 +38,7 @@ rm --force "${ARCHIVE}"
 [[ -f "${DESTINATION}/install.sh" ]]
 
 chmod +x "${DESTINATION}/install.sh"
+
+echo 'Done!'
+echo "Run \"${DESTINATION}/install.sh\" to start the installation."
+echo "You should manually review the files inside ${DESTINATION} first."
